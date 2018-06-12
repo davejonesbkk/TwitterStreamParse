@@ -1,9 +1,10 @@
 
 
-import smtplib, json, tweepy, time, tweepy
+import smtplib, json, tweepy, time, tweepy, argparse
 
 #import user Twitter twitter_credentialstials from config.py
 import config
+
 
 consumer_key = config.twitter_credentials['CONSUMER_KEY']
 consumer_secret = config.twitter_credentials['CONSUMER_SECRET']
@@ -93,16 +94,10 @@ class MyStreamListener(tweepy.StreamListener):
 
 		#Getthe dicts with the hashtags in
 		entities_data = list(map(lambda tweet: tweet['entities']['hashtags'], data_list))
-		print('Entities data: ')
-		print(entities_data)
-		print('.............')
 
 
 		#get the users location if available
 		location_data = list(map(lambda tweet: tweet['user']['location'], data_list))
-		print('Location data: ')
-		print(location_data)
-		print('.............')
 
 		user_names = []
 
@@ -138,14 +133,25 @@ class MyStreamListener(tweepy.StreamListener):
 
 if __name__ == '__main__':
 
+	parser = argparse.ArgumentParser(description='Add Twitter stream options')
+	parser.add_argument('n_seconds', type=int, help='Enter an int of number of seconds the stream should run for')
+	parser.add_argument('kw_one', type=str, help='Enter first keyword')
+	parser.add_argument('kw_two', type=str, help='Enter second keyword')
+	args = parser.parse_args()
+
+	stop_time = args.n_seconds
+
+	keyword_one = args.kw_one
+
+	keyword_two = args.kw_two
 
 	start_time = time.time()
 	
-	l = MyStreamListener('twitter_data.txt', start_time, 20)
+	l = MyStreamListener('twitter_data.txt', start_time, stop_time)
 	auth = oauth_authenticate()
 	stream = tweepy.Stream(auth, l)
 	
-	stream.filter(track=['pycon', 'python'])
+	stream.filter(track=[keyword_one, keyword_two])
 
 
 	
