@@ -1,11 +1,10 @@
 
 
-import smtplib, json, tweepy, time, tweepy
-
-#from email.message import EmailMessage
+import smtplib, json, tweepy, time, tweepy, argparse
 
 #import user Twitter twitter_credentialstials from config.py
 import config
+
 
 consumer_key = config.twitter_credentials['CONSUMER_KEY']
 consumer_secret = config.twitter_credentials['CONSUMER_SECRET']
@@ -13,6 +12,17 @@ access_token = config.twitter_credentials['ACCESS_TOKEN']
 access_secret = config.twitter_credentials['ACCESS_SECRET']
 gmail_user = config.twitter_credentials['gmail_user']
 gmail_passwd = config.twitter_credentials['gmail_passwd']
+
+def send_mail(msg):
+
+	receiver = 'dave.splashpress@gmail.com'
+	server = smtplib.SMTP('smtp.gmail.com', 587)
+	server.starttls()
+	server.ehlo()
+	server.login(gmail_user, gmail_passwd)
+	server.sendmail(gmail_user, receiver, msg)
+	server.set_debuglevel(1)
+	server.quit()
 
 
 def oauth_authenticate():
@@ -67,9 +77,6 @@ class MyStreamListener(tweepy.StreamListener):
 	@staticmethod
 	def parse_data(data_list):
 
-		print('Printing data list')
-		print(data_list)
-
 		tweets_text = {}
 
 		language = {}
@@ -79,19 +86,18 @@ class MyStreamListener(tweepy.StreamListener):
 		tweets_text = list(map(lambda tweet: tweet['text'], data_list))
 
 		print('.............')
-		#print(tweets_text)#prints out a list of all the text from the tweets
+
+		print(tweets_text) #prints out a list of all the text from the tweets
+
 		print('.............')
 
-		#this gets the dicts with the hashtags in
-		entities_data = list(map(lambda tweet: tweet['entities']['hashtags'], data_list))
 
-		#print(entities_data)
+		#Getthe dicts with the hashtags in
+		entities_data = list(map(lambda tweet: tweet['entities']['hashtags'], data_list))
 
 
 		#get the users location if available
 		location_data = list(map(lambda tweet: tweet['user']['location'], data_list))
-
-		#print(location_data)
 
 		user_names = []
 
@@ -106,9 +112,15 @@ class MyStreamListener(tweepy.StreamListener):
 		tweets_data = dict(zip(user_names, tweets))
 
 		print('.............')
+
 		print(tweets_data)
+
 		print('.............')
 
+		complete_msg = 'Twitter parse is complete' #placeholder msg for now a& for testing purposes
+
+
+		send_mail(complete_msg)
 		
 
 	def on_error(self, status_code):
@@ -121,14 +133,25 @@ class MyStreamListener(tweepy.StreamListener):
 
 if __name__ == '__main__':
 
+	parser = argparse.ArgumentParser(description='Add Twitter stream options')
+	parser.add_argument('n_seconds', type=int, help='Enter an int of number of seconds the stream should run for')
+	parser.add_argument('kw_one', type=str, help='Enter first keyword')
+	parser.add_argument('kw_two', type=str, help='Enter second keyword')
+	args = parser.parse_args()
+
+	stop_time = args.n_seconds
+
+	keyword_one = args.kw_one
+
+	keyword_two = args.kw_two
 
 	start_time = time.time()
 	
-	l = MyStreamListener('twitter_data.txt', start_time, 20)
+	l = MyStreamListener('twitter_data.txt', start_time, stop_time)
 	auth = oauth_authenticate()
 	stream = tweepy.Stream(auth, l)
 	
-	stream.filter(track=['pycon', 'python'])
+	stream.filter(track=[keyword_one, keyword_two])
 
 
 	
